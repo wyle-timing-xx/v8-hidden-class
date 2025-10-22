@@ -1,0 +1,166 @@
+// V8 调优工程师工作全景图
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>V8 调优工程师工作全景图</title>
+  <style>
+    :root{
+      --bg:#071024; --panel:#0b1220; --accent:#7dd3fc; --muted:#9ca3af; --card:#071827; --ok:#7ee787; --warn:#ffd08a; --bad:#ff9b8a
+    }
+    html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial}
+    body{background:linear-gradient(180deg,#041226 0%, #071427 60%);color:#cfe8f7;display:flex;flex-direction:column;align-items:center;padding:28px}
+    .wrap{width:1100px;max-width:96vw}
+    header{display:flex;align-items:center;gap:16px}
+    h1{margin:0;font-size:20px;color:var(--accent)}
+    p.lead{margin:6px 0 20px;color:var(--muted)}
+    .canvas{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 8px 30px rgba(2,6,23,0.7)}
+    svg{width:100%;height:640px;display:block}
+    .footer{display:flex;gap:12px;justify-content:space-between;margin-top:12px}
+    .panel{background:var(--panel);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,0.02)}
+    .panel h3{margin:0 0 8px 0;color:var(--accent);font-size:14px}
+    .list{color:var(--muted);font-size:13px;line-height:1.6}
+    .chips{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:999px;font-size:12px;color:var(--muted);border:1px solid rgba(255,255,255,0.02)}
+    .tips{display:flex;gap:12px;}
+    .col{flex:1}
+    code{background:rgba(255,255,255,0.02);padding:2px 6px;border-radius:6px;color:#d2f4ff}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>V8 调优工程师 — 工作全景图</h1>
+    </header>
+    <p class="lead">一张图看清从 JavaScript 源码到优化机器码、bailout 与再优化的完整闭环；同时列出调优工具链、验证方法与常见“破坏”因素。</p>
+
+    <div class="canvas">
+      <svg viewBox="0 0 1100 640" xmlns="http://www.w3.org/2000/svg" aria-label="V8 performance engineer panorama">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#7dd3fc"/>
+          </marker>
+          <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="8" stdDeviation="14" flood-opacity="0.18" flood-color="#000"/>
+          </filter>
+        </defs>
+
+        <!-- Left column: source & tools -->
+        <g>
+          <rect x="24" y="24" width="240" height="120" rx="10" fill="#061428" stroke="#0e4f6a"/>
+          <text x="144" y="48" fill="#9ee9ff" font-size="14" font-weight="700" text-anchor="middle">JavaScript 源码</text>
+          <text x="144" y="70" fill="#cfeeff" font-size="12" text-anchor="middle">函数 / 模块 / 业务逻辑</text>
+
+          <text x="40" y="100" fill="#9ca3af" font-size="12">• 例: <tspan font-family='mono'>findWord(str, word)</tspan></text>
+          <text x="40" y="116" fill="#9ca3af" font-size="12">• 编写风格影响可优化性</text>
+        </g>
+
+        <!-- arrow to Ignition -->
+        <path d="M 264 84 L 340 84" stroke="#7dd3fc" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+        <text x="310" y="72" fill="#9ca3af" font-size="12" text-anchor="middle">执行 → Ignition（字节码）</text>
+
+        <!-- Ignition box -->
+        <g>
+          <rect x="340" y="24" width="220" height="140" rx="12" fill="#051426" stroke="#1b6f95" stroke-width="1.2" filter="url(#shadow)"/>
+          <text x="450" y="52" fill="#9ce8ff" font-size="16" font-weight="700" text-anchor="middle">Ignition</text>
+          <text x="450" y="74" fill="#cfeeff" font-size="12" text-anchor="middle">Bytecode / 解释执行</text>
+          <text x="450" y="96" fill="#9ca3af" font-size="12" text-anchor="middle">收集类型反馈（Feedback Vector）</text>
+
+          <rect x="380" y="110" width="140" height="36" rx="8" fill="#072d3b" stroke="#085a6b"/>
+          <text x="450" y="134" fill="#aef0ff" font-size="12" text-anchor="middle">Feedback Vector</text>
+        </g>
+
+        <!-- hotness arrow -->
+        <path d="M 560 94 L 660 94" stroke="#7dd3fc" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+        <text x="610" y="82" fill="#9ca3af" font-size="12" text-anchor="middle">Hot? (统计调用次数 & 类型稳定)</text>
+
+        <!-- TurboFan -->
+        <g>
+          <rect x="660" y="8" width="300" height="180" rx="14" fill="url(#)" stroke="#0b5f86" stroke-width="1.4"/>
+          <linearGradient id="g2" x1="0" x2="1"><stop offset="0" stop-color="#0ea5e9" stop-opacity="0.12"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0.06"/></linearGradient>
+          <rect x="660" y="8" width="300" height="180" rx="14" fill="url(#g2)" stroke="#0b5f86" stroke-width="1.2"/>
+          <text x="810" y="40" fill="#05334a" font-size="18" font-weight="700" text-anchor="middle">TurboFan</text>
+          <text x="810" y="64" fill="#05334a" font-size="13" text-anchor="middle">优化编译器—生成机器码</text>
+
+          <text x="760" y="92" fill="#034659" font-size="12">• 内联小函数 & Builtins</text>
+          <text x="760" y="110" fill="#034659" font-size="12">• Loop optimizations / BCE</text>
+          <text x="760" y="128" fill="#034659" font-size="12">• Constant folding / escape analysis</text>
+
+        </g>
+
+        <!-- Builtins and optimized code -->
+        <rect x="660" y="200" width="300" height="110" rx="10" fill="#042833" stroke="#045a6b"/>
+        <text x="810" y="224" fill="#a9fff7" font-size="16" font-weight="700" text-anchor="middle">Optimized Machine Code</text>
+        <text x="810" y="244" fill="#cfeff2" font-size="12" text-anchor="middle">（内联 Builtins，例如 %StringIndexOf）</text>
+
+        <!-- safepoint checks -->
+        <circle cx="560" cy="240" r="6" fill="#7dd3fc"/>
+        <text x="560" y="260" fill="#9ca3af" font-size="12" text-anchor="middle">safepoints / runtime checks</text>
+
+        <!-- optimized running arrow to runtime checks -->
+        <path d="M 810 310 L 810 360" stroke="#8ef3ff" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+        <text x="840" y="350" fill="#9ca3af" font-size="12" text-anchor="middle">运行优化路径（fast path）</text>
+
+        <!-- bailout path back to Ignition -->
+        <path d="M 740 320 C 680 420, 540 460, 300 420" stroke="#ff9b7d" stroke-width="2.6" fill="none" marker-end="url(#arr)"/>
+        <text x="520" y="430" fill="#ffb99a" font-size="13" text-anchor="middle">假设失效 → Bailout / Deoptimization</text>
+
+        <rect x="260" y="440" width="220" height="80" rx="10" fill="#0a1b22" stroke="#3a6b6d"/>
+        <text x="370" y="462" fill="#ffd8c4" font-size="13" font-weight="700" text-anchor="middle">Deopt 恢复到解释器</text>
+        <text x="370" y="484" fill="#f2e7df" font-size="12" text-anchor="middle">• 收集寄存器/栈 → 映射回 bytecode</text>
+        <text x="370" y="502" fill="#f2e7df" font-size="12" text-anchor="middle">• 标记 deoptimized → 继续解释执行</text>
+
+        <!-- reoptimize loop arrow -->
+        <path d="M 280 440 L 280 200" stroke="#7dd3fc" stroke-width="1.8" fill="none" marker-end="url(#arr)"/>
+        <text x="240" y="320" fill="#9ca3af" font-size="12" text-anchor="middle">收集新类型反馈 → 可能重优化</text>
+
+        <!-- Right column: tools & checklist -->
+        <rect x="980" y="24" width="120" height="270" rx="10" fill="#061428" stroke="#0e4f6a"/>
+        <text x="1040" y="48" fill="#9ee9ff" font-size="14" font-weight="700" text-anchor="middle">工具 & 命令</text>
+        <text x="1040" y="74" fill="#cfeeff" font-size="12" text-anchor="middle">诊断 & 验证</text>
+        <text x="1000" y="100" fill="#9ca3af" font-size="12">• --print-bytecode</text>
+        <text x="1000" y="118" fill="#9ca3af" font-size="12">• --trace-opt</text>
+        <text x="1000" y="136" fill="#9ca3af" font-size="12">• --trace-deopt</text>
+        <text x="1000" y="154" fill="#9ca3af" font-size="12">• --trace-inlining</text>
+        <text x="1000" y="172" fill="#9ca3af" font-size="12">• %GetOptimizationStatus</text>
+        <text x="1000" y="190" fill="#9ca3af" font-size="12">• node --prof</text>
+        <text x="1000" y="208" fill="#9ca3af" font-size="12">• DevTools Performance</text>
+
+        <!-- Bottom left tips -->
+        <rect x="24" y="520" width="520" height="100" rx="10" fill="#061726" stroke="#124a53"/>
+        <text x="40" y="548" fill="#9ee9ff" font-size="13" font-weight="700">优化破坏因素（常见）</text>
+        <text x="40" y="568" fill="#f2efe6" font-size="12">• try/catch / eval / with （编译期禁用优化）</text>
+        <text x="40" y="586" fill="#f2efe6" font-size="12">• 类型多态（mix string/number/object）</text>
+        <text x="40" y="604" fill="#f2efe6" font-size="12">• 原型链/隐式修改 <tspan font-family='mono'>String.prototype</tspan></text>
+        <text x="40" y="622" fill="#f2efe6" font-size="12">• 跨 Realm / 不稳定 builtins</text>
+
+        <!-- Bottom right checklist -->
+        <rect x="564" y="520" width="536" height="100" rx="10" fill="#061726" stroke="#124a53"/>
+        <text x="580" y="548" fill="#9ee9ff" font-size="13" font-weight="700">调优工程师工作清单</text>
+        <text x="580" y="568" fill="#f2efe6" font-size="12">1. 使用 Profiler 找热点 (node --prof)</text>
+        <text x="580" y="586" fill="#f2efe6" font-size="12">2. 观察字节码与反馈向量 (--print-bytecode)</text>
+        <text x="580" y="604" fill="#f2efe6" font-size="12">3. 用 --trace-inlining 验证 Builtins 内联</text>
+        <text x="580" y="622" fill="#f2efe6" font-size="12">4. 回归测试确保无退化（--trace-deopt, benchmarks）</text>
+
+      </svg>
+    </div>
+
+    <div class="footer">
+      <div class="panel" style="flex:1">
+        <h3>Quick Tips</h3>
+        <div class="list">保持输入类型稳定、避免动态改原型、不要把关键路径放在 try/catch、为热点函数提供固定调用模式。</div>
+      </div>
+      <div class="panel" style="width:360px">
+        <h3>验证命令示例</h3>
+        <div class="list">
+          <div><code>node --trace-opt --trace-deopt --trace-inlining app.js</code></div>
+          <div style="margin-top:8px"><code>node --print-bytecode app.js</code> → 查看 Ignition 字节码及 feedback slots</div>
+          <div style="margin-top:8px"><code>%GetOptimizationStatus(fn)</code> 在测试中查询函数状态</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
